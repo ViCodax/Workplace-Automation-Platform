@@ -1,293 +1,209 @@
-# Workplace Automation Platform
+<div align="center">
 
-Ferramentas de automação baseadas em PowerShell desenvolvidas para simplificar operações recorrentes de suporte ao Workplace, padronizar procedimentos de troubleshooting e reduzir intervenções manuais.
+# ⚙️ Workplace Automation Platform (WAP)
 
-## Sobre
+### Toolkit de automação em PowerShell para suporte Workplace, troubleshooting e redução de intervenções manuais.
 
-A **Workplace Automation Platform (WAP)** é uma iniciativa de automação focada na melhoria de processos técnicos e repetitivos de suporte por meio de PowerShell e tecnologias de distribuição corporativa.
+<img src="https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge&labelColor=0b241c" />
+<img src="https://img.shields.io/badge/Status-Em%20Produção-22C55E?style=for-the-badge&labelColor=0b241c" />
+<img src="https://img.shields.io/badge/PowerShell-5.1%2B-22C55E?style=for-the-badge&logo=powershell&logoColor=white&labelColor=0b241c" />
+<img src="https://img.shields.io/badge/SCCM-Compatível-22C55E?style=for-the-badge&logo=microsoft&logoColor=white&labelColor=0b241c" />
 
-As ferramentas foram originalmente desenvolvidas como parte de uma **plataforma corporativa de automação para Workplace** e posteriormente adaptadas para funcionar de forma independente do ambiente corporativo original.
+</div>
 
-O repositório atual contém as três primeiras ferramentas de automação desenvolvidas para a plataforma.
+<br/>
 
-O projeto foi concebido pensando em ambientes corporativos, incluindo distribuição centralizada por meio do **Microsoft Configuration Manager (SCCM)** e geração estruturada de logs de execução.
+## 📑 Sumário
 
----
+- [Sobre](#sobre)
+- [Objetivos](#objetivos)
+- [Ferramentas disponíveis](#ferramentas)
+- [Estrutura do repositório](#estrutura)
+- [Requisitos](#requisitos)
+- [Como usar](#como-usar)
+- [Distribuição via SCCM](#sccm)
+- [Roadmap](#roadmap)
+- [Contribuição](#contribuicao)
+- [Licença](#licenca)
+- [Autor](#autor)
 
-## Objetivos
+<br/>
+
+<a id="sobre"></a>
+## 📌 Sobre
+
+A **Workplace Automation Platform (WAP)** é uma iniciativa de automação focada na melhoria de processos técnicos e repetitivos de suporte, construída em **PowerShell** e pensada para tecnologias de distribuição corporativa.
+
+As ferramentas foram originalmente desenvolvidas como parte de uma plataforma corporativa de automação para Workplace e, posteriormente, adaptadas para funcionar de forma independente do ambiente corporativo original.
+
+O repositório atual contém as **três primeiras ferramentas** de automação desenvolvidas para a plataforma. O projeto foi concebido pensando em ambientes corporativos, incluindo distribuição centralizada por meio do **Microsoft Configuration Manager (SCCM)** e geração estruturada de logs de execução.
+
+<br/>
+
+<a id="objetivos"></a>
+## 🎯 Objetivos
 
 A plataforma foi criada para solucionar cenários recorrentes de suporte que tradicionalmente exigem intervenção manual.
 
-### Principais objetivos
+| Objetivo | Descrição |
+|---|---|
+| 🔁 Reduzir tarefas repetitivas | Elimina a execução manual de procedimentos técnicos recorrentes |
+| ⏱️ Diminuir tempo de troubleshooting | Automatiza diagnósticos e reparos que levariam minutos/horas manualmente |
+| 📏 Padronizar procedimentos | Garante que todo suporte siga o mesmo fluxo de resolução |
+| 📈 Melhorar escalabilidade operacional | Permite atender mais usuários sem aumentar o time proporcionalmente |
+| 🚀 Aumentar produtividade da equipe | Libera o time de Workplace para tarefas de maior valor |
+| 🧪 Disponibilizar rotinas consistentes | Diagnóstico e reparo padronizados, testados e documentados |
+| 📦 Permitir distribuição via SCCM | Implantação centralizada em toda a base corporativa |
+| 📊 Coletar dados de execução | Logs estruturados para análise operacional e telemetria |
 
-* Reduzir tarefas técnicas repetitivas
-* Diminuir o tempo necessário para troubleshooting
-* Padronizar procedimentos de suporte
-* Melhorar a escalabilidade operacional
-* Aumentar a produtividade da equipe de Workplace
-* Disponibilizar rotinas consistentes de diagnóstico e reparo
-* Permitir distribuição centralizada por meio do SCCM
-* Coletar dados de execução para análise operacional
+<br/>
 
----
-
-## Ferramentas Disponíveis
+<a id="ferramentas"></a>
+## 🛠️ Ferramentas disponíveis
 
 ### 1. Teams Repair
+**Status:** 🟢 Produção
 
 Automatiza procedimentos comuns de troubleshooting do Microsoft Teams.
 
-O script realiza:
-
-* Encerramento de processos do Teams
-* Encerramento de processos do Microsoft Edge WebView
-* Limpeza do cache do Teams
-* Múltiplas tentativas de limpeza com lógica de retry
-* Reinicialização do aplicativo Teams
-* Geração de logs de execução
-* Categorização de erros
-* Identificação do usuário e da estação de trabalho
-* Consulta opcional ao departamento do usuário no Active Directory
-
-**Status:** Produção
-
----
+- Encerramento de processos do Teams
+- Encerramento de processos do Microsoft Edge WebView
+- Limpeza do cache do Teams
+- Múltiplas tentativas de limpeza com lógica de retry
+- Reinicialização do aplicativo Teams
+- Geração de logs de execução
+- Categorização de erros
+- Identificação do usuário e da estação de trabalho
+- Consulta opcional ao departamento do usuário no Active Directory
 
 ### 2. Windows Quick Repair
+**Status:** 🟢 Produção
 
 Executa um conjunto de procedimentos rápidos de troubleshooting e manutenção do Windows, utilizados frequentemente no suporte diário de Workplace.
 
-A automação inclui:
-
-* Limpeza do cache DNS
-* Reset do Winsock
-* Reset do TCP/IP
-* Limpeza da pasta TEMP do usuário
-* Limpeza da pasta TEMP do Windows
-* Limpeza do cache do Teams
-* Reinicialização do Windows Explorer
-* Coleta de informações do sistema
-* Geração de logs de execução
-* Tratamento e categorização de erros
-
-**Status:** Produção
-
----
+- Limpeza do cache DNS
+- Reset do Winsock
+- Reset do TCP/IP
+- Limpeza da pasta TEMP do usuário
+- Limpeza da pasta TEMP do Windows
+- Limpeza do cache do Teams
+- Reinicialização do Windows Explorer
+- Coleta de informações do sistema
+- Geração de logs de execução
+- Tratamento e categorização de erros
 
 ### 3. Windows Advanced Repair
+**Status:** 🟢 Produção
 
 Disponibiliza uma rotina mais completa de troubleshooting e reparo do Windows para problemas recorrentes do sistema operacional.
 
-A automação inclui procedimentos como:
+- System File Checker (SFC)
+- Restauração da integridade do sistema com DISM
+- Verificação de disco com CHKDSK
+- Otimização do disco
+- Reset dos serviços do Windows Update
+- Limpeza do cache do Windows Update
+- Diagnóstico do sistema
+- Coleta de informações de rede
+- Monitoramento de espaço disponível em disco
+- Coleta do tempo de atividade do sistema
+- Geração de logs de execução
+- Categorização de erros
 
-* System File Checker (SFC)
-* Restauração da integridade do sistema com DISM
-* Verificação de disco com CHKDSK
-* Otimização do disco
-* Reset dos serviços do Windows Update
-* Limpeza do cache do Windows Update
-* Diagnóstico do sistema
-* Coleta de informações de rede
-* Monitoramento de espaço disponível em disco
-* Coleta do tempo de atividade do sistema
-* Geração de logs de execução
-* Categorização de erros
-* Identificação do usuário e da estação de trabalho
+<br/>
 
-**Status:** Produção
+<a id="estrutura"></a>
+## 📂 Estrutura do repositório
 
----
-
-## Arquitetura
-
-As ferramentas seguem um fluxo simples de automação e telemetria:
-
-```text
-┌──────────────────────┐
-│   Ferramenta         │
-│     PowerShell       │
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────┐
-│ Troubleshooting &    │
-│ Lógica de Reparo     │
-└──────────┬───────────┘
-           │
-           ├──────────────► Logs Locais
-           │
-           ▼
-┌──────────────────────┐
-│ Telemetria de        │
-│ Execução JSON / CSV  │
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────┐
-│      Power BI        │
-│  Dados Operacionais  │
-└──────────────────────┘
+```
+Workplace-Automation-Platform-ptbr/
+├── scripts/
+│   ├── Teams-Repair.ps1
+│   ├── Windows-Quick-Repair.ps1
+│   └── Windows-Advanced-Repair.ps1
+├── assets/
+│   └── screenshots/
+├── LICENSE
+└── README.md
 ```
 
-A arquitetura foi projetada para permitir que a camada de automação execute de forma independente, enquanto gera informações estruturadas que podem posteriormente ser consumidas por soluções de relatórios e análise de dados.
+<br/>
 
----
+<a id="requisitos"></a>
+## 💻 Requisitos
 
-## Distribuição Corporativa
+- Windows 10 ou superior
+- PowerShell 5.1 ou superior
+- Execução com privilégios administrativos (necessário para reparos de sistema)
+- Módulo Active Directory (opcional, apenas para consulta de departamento do usuário)
 
-Os scripts foram desenvolvidos considerando a distribuição por meio do **Microsoft Configuration Manager (SCCM)**.
+<br/>
 
-Isso permite que as ferramentas sejam distribuídas centralmente e executadas em endpoints Windows gerenciados, sem a necessidade de instalação manual em cada máquina.
+<a id="como-usar"></a>
+## ▶️ Como usar
 
-### Conceito de distribuição
+1. Clone o repositório:
+   ```bash
+   git clone https://github.com/ViCodax/Workplace-Automation-Platform-ptbr.git
+   cd Workplace-Automation-Platform-ptbr/scripts
+   ```
 
-```text
-SCCM
+2. Execute o script desejado em um terminal PowerShell com privilégios administrativos:
+   ```powershell
+   .\Teams-Repair.ps1
+   ```
 
- │
- ├── Teams Repair
- │
- ├── Windows Quick Repair
- │
- └── Windows Advanced Repair
-          │
-          ▼
-    Windows Endpoint
-          │
-          ├── Reparo
-          ├── Logging
-          └── Telemetria
-```
+3. Acompanhe os logs de execução gerados automaticamente para validar o resultado da automação.
 
-Essa abordagem transforma scripts individuais de PowerShell em recursos de suporte reutilizáveis dentro de um ambiente corporativo de Workplace.
+> ⚠️ Recomenda-se testar os scripts em ambiente controlado antes de distribuir em produção.
 
----
+<br/>
 
-## Distribuição via SCCM
+<a id="sccm"></a>
+## 📦 Distribuição via SCCM
 
-As ferramentas de automação foram projetadas para serem distribuídas pelo **Microsoft Configuration Manager (SCCM)**, permitindo que as equipes de Workplace distribuam e executem rotinas padronizadas de troubleshooting em endpoints Windows gerenciados.
+Os scripts foram projetados para permitir empacotamento e distribuição centralizada via **Microsoft Configuration Manager (SCCM)**, possibilitando:
 
-### Ferramentas distribuídas pelo SCCM
+- Execução silenciosa em massa
+- Coleta de logs padronizados para auditoria
+- Agendamento e distribuição segmentada por coleção de dispositivos
 
-![Ferramentas WAP distribuídas pelo SCCM](assets/screenshots/sccm-tools.jpeg)
+<br/>
 
-A imagem representa a distribuição interna das ferramentas de automação da WAP por meio do SCCM.
+<a id="roadmap"></a>
+## 🗺️ Roadmap
 
-O ambiente e os detalhes de infraestrutura originais foram omitidos ou anonimizados por questões de segurança e privacidade.
+- [ ] Adicionar novas automações de suporte (impressoras, VPN, perfil de usuário)
+- [ ] Telemetria centralizada em Power BI
+- [ ] Versão com interface gráfica (GUI) para usuários finais
+- [ ] Publicação de pacotes prontos para Intune
 
----
+<br/>
 
-## Logging e Telemetria
+<a id="contribuicao"></a>
+## 🤝 Contribuição
 
-Cada automação gera informações de execução para apoiar troubleshooting, auditoria e análise operacional.
+Contribuições são bem-vindas! Sinta-se à vontade para abrir uma *issue* com sugestões, bugs encontrados ou ideias de novas automações, ou enviar um *pull request*.
 
-As informações coletadas podem incluir:
+<br/>
 
-* Data e horário da execução
-* Usuário conectado
-* Nome do computador
-* Endereço IPv4
-* Departamento
-* Espaço disponível em disco
-* Tempo de atividade do sistema
-* Status da execução
-* Mensagem de erro
-* Categoria do erro
-* Duração da execução
-* Quantidade de tentativas
+<a id="licenca"></a>
+## 📄 Licença
 
-A camada de telemetria foi projetada para alimentar futuramente o dashboard da WAP.
+Este projeto está licenciado sob os termos da **Licença MIT** — veja o arquivo [LICENSE](./LICENSE) para mais detalhes.
 
-### Fluxo de dados planejado
+<br/>
 
-```text
-PowerShell
-     │
-     ▼
-   JSON
-     │
-     ▼
-    CSV
-     │
-     ▼
- Power BI
-```
+<a id="autor"></a>
+## 👤 Autor
 
-Isso permite que a automação técnica gere dados operacionais mensuráveis, em vez de apenas executar uma rotina de reparo.
-
----
-
-## Tecnologias
-
-* PowerShell
-* Windows Enterprise
-* Microsoft Configuration Manager (SCCM)
-* Active Directory
-* Power BI
-* JSON
-* CSV
-* Git
-* GitHub
-
----
-
-## Roadmap do Projeto
-
-### Concluído
-
-* [x] Teams Repair
-* [x] Windows Quick Repair
-* [x] Windows Advanced Repair
-* [x] Automação baseada em PowerShell
-* [x] Tratamento de erros
-* [x] Logging de execução
-* [x] Telemetria estruturada
-* [x] Execução orientada ao SCCM
-
-### Planejado
-
-* [ ] SAP List Repair
-* [ ] Autoconfiguração do DBeaver com SSO
-* [ ] Instalador automatizado do Docker (WSL + Ubuntu + Docker)
-* [ ] Camada de configuração reutilizável
-* [ ] Expansão da documentação
-* [ ] Dashboard operacional da WAP
-* [ ] Novas ferramentas de automação para Workplace
-* [ ] Arquitetura modular
-* [ ] Maior compatibilidade entre diferentes ambientes
-
----
-
-## Versão de Produção e Versão Pública
-
-As ferramentas originais da WAP foram desenvolvidas para solucionar problemas reais e recorrentes dentro de uma operação corporativa de Workplace.
-
-A versão pública deste repositório tem como objetivo demonstrar os conceitos técnicos, a arquitetura de automação e as práticas de desenvolvimento utilizadas na solução, sem expor infraestrutura proprietária ou informações corporativas.
-
-O projeto continua evoluindo de uma solução interna orientada à produção para um conjunto de ferramentas de automação mais modular, reutilizável e adaptável.
-
----
-
-## Segurança e Privacidade
-
-Este repositório não contém:
-
-* Credenciais corporativas
-* Senhas internas
-* Chaves privadas
-* Segredos de produção
-* Endereços de servidores internos
-* Informações confidenciais de infraestrutura
-* Dados corporativos proprietários
-
-Configurações específicas de cada ambiente devem ser adaptadas antes da utilização dos scripts em outra organização.
-
----
-
-## Autor
+<div align="center">
 
 **Vinicius Correia**
+<br/>
+Workplace Automation Specialist
 
-Analista com foco em **Workplace, Automação de TI, PowerShell e Infraestrutura Windows**.
+<a href="https://www.linkedin.com/in/viniciuscdantas"><img src="https://img.shields.io/badge/LinkedIn-viniciuscdantas-22C55E?style=for-the-badge&logo=linkedin&logoColor=white&labelColor=0b241c" /></a>
+<a href="https://github.com/ViCodax"><img src="https://img.shields.io/badge/GitHub-ViCodax-22C55E?style=for-the-badge&logo=github&logoColor=white&labelColor=0b241c" /></a>
 
-O projeto WAP representa um esforço contínuo para transformar procedimentos repetitivos de suporte ao Workplace em soluções de automação padronizadas, escaláveis e mensuráveis.
+</div>
