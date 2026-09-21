@@ -1,0 +1,28 @@
+Usuario logado: ####\#####
+Usuario extraido: ###.#####
+Departamento obtido de AD: PRODUCAO GOVERNANCA E INFRAESTRUTURA
+==========================================
+WAP - QuickFix Windows
+Inicio: 08/25/2026 11:47:23
+Usuario: ########
+Computador: #######
+==========================================
+IPv4: 172.26.128.1
+Espaco livre (GB): 116.91
+Uptime (Horas): 89.79
+Executando FlushDNS...
+Executando Winsock Reset...
+Executando TCP/IP Reset...
+Limpando TEMP do usuario...
+Limpando TEMP do Windows...
+Limpando cache Teams...
+Reiniciando Explorer...
+Windows Update Scan opcional removido por compatibilidade entre versoes do Windows.
+Fim: 08/25/2026 11:47:37
+Duracao: 14.08 segundos
+Status: Sucesso
+
+Tentativa 1 de 3 para exportar CSV...
+CSV serializacao: OK
+Caminho de rede acessivel. Escrevendo para: \\######
+CSV gerado com sucesso em caminho de rede. Tamanho: 203 bytes
