@@ -1,7 +1,11 @@
 # ==========================================
 # WAP - QuickFix Windows
-# Autor: Vinicius Silva
+# Telemetria opcional: informe um diretorio local ou UNC gravavel, se desejar.
 # ==========================================
+
+param(
+    [string]$TelemetryPath = ""
+)
 
 # Funções auxiliares (incorporadas para compatibilidade SCCM)
 function Get-WAP-ExtractedUser {
@@ -64,17 +68,16 @@ function Get-WAP-LoggedUser {
     return "Unknown"
 }
 
-# Caminho dos JSONs (Power BI)
-
-$JsonPath = "COLOQUE_SEU_PATH_AQUI"
 $JsonPathBackup = "C:\Temp\WAP\JsonBackup"
+# Caminho CSV de telemetria; por padrao, usa somente o backup local.
+$JsonPath = if ([string]::IsNullOrWhiteSpace($TelemetryPath)) { $JsonPathBackup } else { $TelemetryPath }
 
 # Criar backup local para fallback
 if (!(Test-Path $JsonPathBackup)) {
     New-Item -Path $JsonPathBackup -ItemType Directory -Force | Out-Null
 }
 
-if (!(Test-Path $JsonPath)) {
+if (-not [string]::IsNullOrWhiteSpace($JsonPath) -and !(Test-Path $JsonPath)) {
     New-Item -Path $JsonPath -ItemType Directory -Force | Out-Null
 }
 

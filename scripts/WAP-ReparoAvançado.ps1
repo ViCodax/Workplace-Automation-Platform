@@ -1,5 +1,5 @@
 # ==========================================
-# WAP - Reparo Teams
+# WAP - Advanced Repair
 # Telemetria opcional: informe um diretorio local ou UNC gravavel, se desejar.
 # ==========================================
 
@@ -81,7 +81,7 @@ if (-not [string]::IsNullOrWhiteSpace($JsonPath) -and !(Test-Path $JsonPath)) {
     New-Item -Path $JsonPath -ItemType Directory -Force | Out-Null
 }
 
-# Variáveis de execução
+# Variáveis
 
 $Inicio = Get-Date
 $Status = "Sucesso"
@@ -89,7 +89,7 @@ $Erro = ""
 $ErrorCategory = "Nenhum"
 $Tentativa = 0
 
-# Caminho dos LOGs
+# Caminho Logs
 
 $LogPath = "C:\Temp\WAP\Logs"
 
@@ -97,24 +97,22 @@ if (!(Test-Path $LogPath)) {
     New-Item -Path $LogPath -ItemType Directory -Force | Out-Null
 }
 
-$LogFile = Join-Path $LogPath "WAP_ReparoTeams.log"
+$LogFile = Join-Path $LogPath "WAP_ReparoAvancado.log"
 
 # Pegar informações do usuário logado e Active Directory
-
 $LoggedUser = Get-WAP-LoggedUser
-$User = Get-WAP-ExtractedUser
+$Username = Get-WAP-ExtractedUser
 
 Add-Content $LogFile "Usuario logado: $LoggedUser"
-Add-Content $LogFile "Usuario extraido: $User"
+Add-Content $LogFile "Usuario extraido: $Username"
 
-# Tentar obter departamento do Active Directory usando o usuário logado
 $Department = "Unknown"
-if ($User -and $User -ne "Unknown" -and $User -notlike "*$") {
+if ($Username -and $Username -ne "Unknown" -and $Username -notlike "*$") {
     try {        # Verificar se módulo ActiveDirectory está disponível
         if (-not (Get-Module -Name ActiveDirectory -ErrorAction SilentlyContinue)) {
             Import-Module ActiveDirectory -ErrorAction Stop
         }
-                $ADUser = Get-ADUser -Identity $User -Properties Department -ErrorAction Stop
+                $ADUser = Get-ADUser -Identity $Username -Properties Department -ErrorAction Stop
         if ($ADUser.Department) {
             $Department = $ADUser.Department
             Add-Content $LogFile "Departamento obtido de AD: $Department"
@@ -125,15 +123,15 @@ if ($User -and $User -ne "Unknown" -and $User -notlike "*$") {
     }
 }
 else {
-    Add-Content $LogFile "AVISO: Usuario invalido ou conta de sistema ($User). Departamento nao disponivel."
+    Add-Content $LogFile "AVISO: Usuario invalido ou conta de sistema ($Username). Departamento nao disponivel."
 }
 
 $NetworkAccessible = $false
 
-# Cabeçalho do LOG
+# Cabeçalho
 
 Add-Content $LogFile "=========================================="
-Add-Content $LogFile "WAP - Reparo Teams"
+Add-Content $LogFile "WAP - Advanced Repair"
 Add-Content $LogFile "Inicio: $Inicio"
 Add-Content $LogFile "Usuario: $env:USERNAME"
 Add-Content $LogFile "Computador: $env:COMPUTERNAME"
@@ -141,80 +139,126 @@ Add-Content $LogFile "=========================================="
 
 try {
 
-    Add-Content $LogFile "Encerrando processos Teams..."
+    # Informações para troubleshooting
 
-    Get-Process -Name "ms-teams" -ErrorAction SilentlyContinue | Stop-Process -Force
-    Get-Process -Name "teams" -ErrorAction SilentlyContinue | Stop-Process -Force
-    Get-Process -Name "msteams" -ErrorAction SilentlyContinue | Stop-Process -Force
-    Get-Process -Name "msedgewebview2" -ErrorAction SilentlyContinue | Stop-Process -Force
+    $IPv4 = (
+        Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.IPAddress -notlike "169.*" -and
+            $_.IPAddress -ne "127.0.0.1"
+        } |
+        Select-Object -First 1 -ExpandProperty IPAddress
+    )
 
-$TeamsCache = "C:\Users\$User\Appdata\Local\Packages\MSTeams_8wekyb3d8bbwe\LocalCache\Microsoft\MSTeams"
+    $Disco = Get-CimInstance Win32_LogicalDisk |
+        Where-Object DeviceID -eq "C:"
 
-Add-Content $LogFile "Removendo cache Teams..."
+    $EspacoLivreGB = [Math]::Round(
+        ($Disco.FreeSpace / 1GB),
+        2
+    )
 
-Add-Content $LogFile "Caminho utilizado: $TeamsCache"
+    $BootTime = (
+        Get-CimInstance Win32_OperatingSystem
+    ).LastBootUpTime
 
-if (Test-Path $TeamsCache) {
-    $CacheRemovido = $false
-    $MaxTentativasCache = 3
+    $UptimeHoras = [Math]::Round(
+        ((Get-Date) - $BootTime).TotalHours,
+        2
+    )
 
-    for ($TentativaCache = 1; $TentativaCache -le $MaxTentativasCache; $TentativaCache++) {
-        Add-Content $LogFile "Tentativa $TentativaCache/$MaxTentativasCache para remover cache MSTeams..."
+    Add-Content $LogFile "IPv4: $IPv4"
+    Add-Content $LogFile "Espaco Livre (GB): $EspacoLivreGB"
+    Add-Content $LogFile "Uptime (Horas): $UptimeHoras"
 
-        try {
-            # Limpa filhos primeiro para reduzir falhas de "pasta nao esta vazia".
-            Get-ChildItem -Path $TeamsCache -Force -ErrorAction SilentlyContinue |
-                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+# SFC
 
-            Remove-Item -Path $TeamsCache -Recurse -Force -ErrorAction Stop
+    Add-Content $LogFile "Iniciando SFC..."
 
-            Start-Sleep -Milliseconds 500
-            if (-not (Test-Path $TeamsCache)) {
-                $CacheRemovido = $true
-                Add-Content $LogFile "Pasta MSTeams removida com sucesso."
-                break
-            }
-        }
-        catch {
-            Add-Content $LogFile "Falha na tentativa ${TentativaCache}: $($_.Exception.Message)"
-        }
-
-        if ($TentativaCache -lt $MaxTentativasCache) {
-            Start-Sleep -Seconds 2
-        }
-    }
-
-    if (-not $CacheRemovido) {
-        throw "Nao foi possivel remover o cache MSTeams apos $MaxTentativasCache tentativas."
-    }
-}
-else {
-
-    Add-Content $LogFile "Pasta MSTeams nao localizada."
-}
-
-$Protocolos = @(
-    "msteams:"
-    "ms-teams:"
-    "teams:"
-)
-
-foreach ($Protocolo in $Protocolos) {
     try {
-
-        Add-Content $LogFile "Tentando abrir Teams usando $Protocolo"
-
-        Start-Process $Protocolo -ErrorAction Stop
-
-        Add-Content $LogFile "Comando enviado com sucesso utilizando $Protocolo"
-
-        break
+        sfc /scannow | Out-Null
+        Add-Content $LogFile "SFC concluido com sucesso."
     }
     catch {
-
-        Add-Content $LogFile "Falha ao iniciar Teams utilizando $Protocolo"
+        Add-Content $LogFile "Erro ao executar SFC: $($_.Exception.Message)"
     }
-}
+
+    # DISM
+
+    Add-Content $LogFile "Iniciando DISM RestoreHealth..."
+
+    try {
+        DISM /Online /Cleanup-Image /RestoreHealth | Out-Null
+        Add-Content $LogFile "DISM concluido com sucesso."
+    }
+    catch {
+        Add-Content $LogFile "Erro ao executar DISM: $($_.Exception.Message)"
+    }
+
+    # CHKDSK
+
+    Add-Content $LogFile "Iniciando CHKDSK..."
+
+    try {
+        & chkdsk C: /scan 2>&1 | Out-Null
+        Add-Content $LogFile "CHKDSK concluido com sucesso."
+    }
+    catch {
+        Add-Content $LogFile "Aviso: CHKDSK requer agendamento ou permissoes elevadas: $($_.Exception.Message)"
+    }
+
+    # Otimizacao de Disco (SSD/HDD)
+
+    Add-Content $LogFile "Iniciando otimizacao de disco..."
+
+    try {
+        # Tentar otimizar C: (funciona em SSDs e HDDs)
+        Optimize-Volume -DriveLetter C -Defrag -ErrorAction Stop | Out-Null
+        Add-Content $LogFile "Otimizacao de disco concluida com sucesso."
+    }
+    catch {
+        Add-Content $LogFile "Aviso: Nao foi possivel otimizar disco: $($_.Exception.Message)"
+    }
+
+    # Windows Update Reset
+
+    Add-Content $LogFile "Reiniciando servicos Windows Update..."
+
+    try {
+        net stop wuauserv | Out-Null
+        net stop bits | Out-Null
+        Add-Content $LogFile "Servicos parados com sucesso."
+    }
+    catch {
+        Add-Content $LogFile "Aviso ao parar servicos: $($_.Exception.Message)"
+    }
+
+    # Remove cache de atualização
+
+    if (Test-Path "C:\Windows\SoftwareDistribution") {
+        Add-Content $LogFile "Limpando SoftwareDistribution..."
+        try {
+            Remove-Item -Path "C:\Windows\SoftwareDistribution" -Recurse -Force -ErrorAction Stop
+            Add-Content $LogFile "SoftwareDistribution removido com sucesso."
+        }
+        catch {
+            Add-Content $LogFile "Aviso ao limpar SoftwareDistribution: $($_.Exception.Message)"
+        }
+    }
+
+    try {
+        net start wuauserv | Out-Null
+        net start bits | Out-Null
+        Add-Content $LogFile "Servicos Windows Update reiniciados com sucesso."
+    }
+    catch {
+        Add-Content $LogFile "Aviso ao reiniciar servicos: $($_.Exception.Message)"
+    }
+
+    Add-Content $LogFile "Windows Update Reset concluido."
+
+    Add-Content $LogFile "Windows Update Scan opcional removido por compatibilidade entre versoes do Windows."
+
 }
 catch {
 
@@ -228,7 +272,7 @@ catch {
     elseif ($Erro -match "not found|nao encontrado|caminho") {
         $ErrorCategory = "CaminhoNaoEncontrado"
     }
-    elseif ($Erro -match "timeout|time out|timeout") {
+    elseif ($Erro -match "timeout|time out") {
         $ErrorCategory = "Timeout"
     }
     else {
@@ -248,34 +292,28 @@ $Duracao = [Math]::Round(
     2
 )
 
-# Informações finais do LOG
-
 Add-Content $LogFile "Fim: $Fim"
 Add-Content $LogFile "Duracao: $Duracao segundos"
 Add-Content $LogFile "Status: $Status"
 Add-Content $LogFile ""
-Add-Content $LogFile "Duracao calculada: $Duracao"
 
-# Objeto JSON (Padrão WAP)
+# JSON padrão WAP
 
 $Resultado = [PSCustomObject]@{
     Data                 = $Inicio.ToString("yyyy-MM-dd HH:mm:ss")
-    Ferramenta           = "WAP-ReparoTeams"
+    Ferramenta           = "WAP-ReparoAvancado"
     Departamento         = $Department
     Status               = $Status
     DuracaoSegundos      = $Duracao
     Erro                 = $Erro
-    TempoEconomizadoMins = 5
+    TempoEconomizadoMins = 40
 }
 
-# Nome do CSV
+# Arquivo CSV
 
-$NomeArquivo = "ReparoTeams_{0}_{1}.csv" -f $env:COMPUTERNAME, (Get-Date -Format "yyyyMMdd_HHmmss")
+$NomeArquivo = "ReparoAvancado_{0}_{1}.csv" -f $env:COMPUTERNAME, (Get-Date -Format "yyyyMMdd_HHmmss")
 $ArquivoJson = Join-Path -Path $JsonPath -ChildPath $NomeArquivo
 $ArquivoJsonBackup = Join-Path -Path $JsonPathBackup -ChildPath $NomeArquivo
-
-Add-Content $LogFile "Arquivo CSV:"
-Add-Content $LogFile $ArquivoJson
 
 # Exportação CSV com validação e retry
 

@@ -1,7 +1,14 @@
 # ==========================================
-# WAP - Advanced Repair
-# Autor: Vinicius Silva
+# WAP - Reparo SAP
+# Informe a pasta que contem SAPUILandscape.xml e SAPUILandscapeGlobal.xml.
 # ==========================================
+
+param(
+    [Parameter(Mandatory = $true)]
+    [string]$SapSourcePath,
+
+    [string]$TelemetryPath = ""
+)
 
 # Funções auxiliares (incorporadas para compatibilidade SCCM)
 function Get-WAP-ExtractedUser {
@@ -64,52 +71,56 @@ function Get-WAP-LoggedUser {
     return "Unknown"
 }
 
-# Caminho JSON (Power BI)
-
-$JsonPath = "COLOQUE_SEU_PATH_AQUI"
-$JsonPathBackup = "C:\Temp\WAP\JsonBackup"
-
-# Criar backup local para fallback
-if (!(Test-Path $JsonPathBackup)) {
-    New-Item -Path $JsonPathBackup -ItemType Directory -Force | Out-Null
-}
-
-if (!(Test-Path $JsonPath)) {
-    New-Item -Path $JsonPath -ItemType Directory -Force | Out-Null
-}
-
-# Variáveis
-
+# Variáveis de execução
 $Inicio = Get-Date
 $Status = "Sucesso"
 $Erro = ""
 $ErrorCategory = "Nenhum"
 $Tentativa = 0
 
-# Caminho Logs
-
+# Caminho dos LOGs
 $LogPath = "C:\Temp\WAP\Logs"
 
 if (!(Test-Path $LogPath)) {
     New-Item -Path $LogPath -ItemType Directory -Force | Out-Null
 }
 
-$LogFile = Join-Path $LogPath "WAP_ReparoAvancado.log"
+$LogFile = Join-Path $LogPath "WAP_ListaSAP.log"
 
-# Pegar informações do usuário logado e Active Directory
+# Caminho dos JSONs (Power BI) - com fallback local caso a rede falhe
+$JsonPathBackup = "C:\Temp\WAP\JsonBackup"
+$JsonPath = if ([string]::IsNullOrWhiteSpace($TelemetryPath)) { $JsonPathBackup } else { $TelemetryPath }
+
+# Tentar criar/validar caminho principal
+try {
+    if (-not [string]::IsNullOrWhiteSpace($JsonPath) -and !(Test-Path $JsonPath)) {
+        New-Item -Path $JsonPath -ItemType Directory -Force | Out-Null
+    }
+}
+catch {
+    Add-Content $LogFile "AVISO: Falha ao acessar/criar JsonPath de rede ($JsonPath). Erro: $($_.Exception.Message)"
+}
+
+# Criar backup local para fallback
+if (!(Test-Path $JsonPathBackup)) {
+    New-Item -Path $JsonPathBackup -ItemType Directory -Force | Out-Null
+}
+
+# Pegando usuário local
 $LoggedUser = Get-WAP-LoggedUser
-$Username = Get-WAP-ExtractedUser
+$User = Get-WAP-ExtractedUser
 
 Add-Content $LogFile "Usuario logado: $LoggedUser"
-Add-Content $LogFile "Usuario extraido: $Username"
+Add-Content $LogFile "Usuario extraido: $User"
 
+# Tentar obter departamento do Active Directory usando o usuário logado
 $Department = "Unknown"
-if ($Username -and $Username -ne "Unknown" -and $Username -notlike "*$") {
+if ($User -and $User -ne "Unknown" -and $User -notlike "*$") {
     try {        # Verificar se módulo ActiveDirectory está disponível
         if (-not (Get-Module -Name ActiveDirectory -ErrorAction SilentlyContinue)) {
             Import-Module ActiveDirectory -ErrorAction Stop
         }
-                $ADUser = Get-ADUser -Identity $Username -Properties Department -ErrorAction Stop
+                $ADUser = Get-ADUser -Identity $User -Properties Department -ErrorAction Stop
         if ($ADUser.Department) {
             $Department = $ADUser.Department
             Add-Content $LogFile "Departamento obtido de AD: $Department"
@@ -120,145 +131,68 @@ if ($Username -and $Username -ne "Unknown" -and $Username -notlike "*$") {
     }
 }
 else {
-    Add-Content $LogFile "AVISO: Usuario invalido ou conta de sistema ($Username). Departamento nao disponivel."
+    Add-Content $LogFile "AVISO: Usuario invalido ou conta de sistema ($User). Departamento nao disponivel."
 }
 
 $NetworkAccessible = $false
 
-# Cabeçalho
 
 Add-Content $LogFile "=========================================="
-Add-Content $LogFile "WAP - Advanced Repair"
+Add-Content $LogFile "WAP - Reparo SAP"
 Add-Content $LogFile "Inicio: $Inicio"
-Add-Content $LogFile "Usuario: $env:USERNAME"
+Add-Content $LogFile "Usuario: $User"
 Add-Content $LogFile "Computador: $env:COMPUTERNAME"
 Add-Content $LogFile "=========================================="
 
+# Caminhos
+$Origem = $SapSourcePath
+$Destino = "C:\Users\$User\AppData\Roaming\SAP\Common"
+
 try {
+    Add-Content $LogFile "Validando pasta SAP..."
 
-    # Informações para troubleshooting
-
-    $IPv4 = (
-        Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
-        Where-Object {
-            $_.IPAddress -notlike "169.*" -and
-            $_.IPAddress -ne "127.0.0.1"
-        } |
-        Select-Object -First 1 -ExpandProperty IPAddress
-    )
-
-    $Disco = Get-CimInstance Win32_LogicalDisk |
-        Where-Object DeviceID -eq "C:"
-
-    $EspacoLivreGB = [Math]::Round(
-        ($Disco.FreeSpace / 1GB),
-        2
-    )
-
-    $BootTime = (
-        Get-CimInstance Win32_OperatingSystem
-    ).LastBootUpTime
-
-    $UptimeHoras = [Math]::Round(
-        ((Get-Date) - $BootTime).TotalHours,
-        2
-    )
-
-    Add-Content $LogFile "IPv4: $IPv4"
-    Add-Content $LogFile "Espaco Livre (GB): $EspacoLivreGB"
-    Add-Content $LogFile "Uptime (Horas): $UptimeHoras"
-
-# SFC
-
-    Add-Content $LogFile "Iniciando SFC..."
-
-    try {
-        sfc /scannow | Out-Null
-        Add-Content $LogFile "SFC concluido com sucesso."
-    }
-    catch {
-        Add-Content $LogFile "Erro ao executar SFC: $($_.Exception.Message)"
-    }
-
-    # DISM
-
-    Add-Content $LogFile "Iniciando DISM RestoreHealth..."
-
-    try {
-        DISM /Online /Cleanup-Image /RestoreHealth | Out-Null
-        Add-Content $LogFile "DISM concluido com sucesso."
-    }
-    catch {
-        Add-Content $LogFile "Erro ao executar DISM: $($_.Exception.Message)"
-    }
-
-    # CHKDSK
-
-    Add-Content $LogFile "Iniciando CHKDSK..."
-
-    try {
-        & chkdsk C: /scan 2>&1 | Out-Null
-        Add-Content $LogFile "CHKDSK concluido com sucesso."
-    }
-    catch {
-        Add-Content $LogFile "Aviso: CHKDSK requer agendamento ou permissoes elevadas: $($_.Exception.Message)"
-    }
-
-    # Otimizacao de Disco (SSD/HDD)
-
-    Add-Content $LogFile "Iniciando otimizacao de disco..."
-
-    try {
-        # Tentar otimizar C: (funciona em SSDs e HDDs)
-        Optimize-Volume -DriveLetter C -Defrag -ErrorAction Stop | Out-Null
-        Add-Content $LogFile "Otimizacao de disco concluida com sucesso."
-    }
-    catch {
-        Add-Content $LogFile "Aviso: Nao foi possivel otimizar disco: $($_.Exception.Message)"
-    }
-
-    # Windows Update Reset
-
-    Add-Content $LogFile "Reiniciando servicos Windows Update..."
-
-    try {
-        net stop wuauserv | Out-Null
-        net stop bits | Out-Null
-        Add-Content $LogFile "Servicos parados com sucesso."
-    }
-    catch {
-        Add-Content $LogFile "Aviso ao parar servicos: $($_.Exception.Message)"
-    }
-
-    # Remove cache de atualização
-
-    if (Test-Path "C:\Windows\SoftwareDistribution") {
-        Add-Content $LogFile "Limpando SoftwareDistribution..."
-        try {
-            Remove-Item -Path "C:\Windows\SoftwareDistribution" -Recurse -Force -ErrorAction Stop
-            Add-Content $LogFile "SoftwareDistribution removido com sucesso."
-        }
-        catch {
-            Add-Content $LogFile "Aviso ao limpar SoftwareDistribution: $($_.Exception.Message)"
+    foreach ($SapFile in 'SAPUILandscape.xml', 'SAPUILandscapeGlobal.xml') {
+        if (-not (Test-Path (Join-Path $Origem $SapFile))) {
+            throw "Arquivo SAP obrigatorio nao encontrado: $(Join-Path $Origem $SapFile)"
         }
     }
 
-    try {
-        net start wuauserv | Out-Null
-        net start bits | Out-Null
-        Add-Content $LogFile "Servicos Windows Update reiniciados com sucesso."
+    if (!(Test-Path $Destino)) {
+        New-Item `
+            -Path $Destino `
+            -ItemType Directory `
+            -Force | Out-Null
+
+        Add-Content $LogFile "Pasta SAP criada."
     }
-    catch {
-        Add-Content $LogFile "Aviso ao reiniciar servicos: $($_.Exception.Message)"
+
+    # Backup dos XMLs atuais
+    if (Test-Path "$Destino\SAPUILandscape.xml") {
+        Copy-Item `
+            "$Destino\SAPUILandscape.xml" `
+            "$Destino\SAPUILandscape.xml.bkp" `
+            -Force
+
+        Add-Content $LogFile "Backup SAPUILandscape.xml realizado."
     }
 
-    Add-Content $LogFile "Windows Update Reset concluido."
+    if (Test-Path "$Destino\SAPUILandscapeGlobal.xml") {
+        Copy-Item `
+            "$Destino\SAPUILandscapeGlobal.xml" `
+            "$Destino\SAPUILandscapeGlobal.xml.bkp" `
+            -Force
 
-    Add-Content $LogFile "Windows Update Scan opcional removido por compatibilidade entre versoes do Windows."
+        Add-Content $LogFile "Backup SAPUILandscapeGlobal.xml realizado."
+    }
 
+    # Cópia dos novos arquivos
+    Copy-Item -Path "$Origem\SAPUILandscape.xml" -Destination $Destino -Force -ErrorAction Stop
+    Add-Content $LogFile "SAPUILandscape.xml copiado."
+
+    Copy-Item -Path "$Origem\SAPUILandscapeGlobal.xml" -Destination $Destino -Force -ErrorAction Stop
+    Add-Content $LogFile "SAPUILandscapeGlobal.xml copiado."
 }
 catch {
-
     $Status = "Falha"
     $Erro = $_.Exception.Message
     
@@ -281,7 +215,6 @@ catch {
 }
 
 # Finalização
-
 $Fim = Get-Date
 
 $Duracao = [Math]::Round(
@@ -289,26 +222,25 @@ $Duracao = [Math]::Round(
     2
 )
 
+# Informações finais do LOG
 Add-Content $LogFile "Fim: $Fim"
 Add-Content $LogFile "Duracao: $Duracao segundos"
 Add-Content $LogFile "Status: $Status"
 Add-Content $LogFile ""
 
-# JSON padrão WAP
-
+# Objeto JSON (Padrão WAP)
 $Resultado = [PSCustomObject]@{
     Data                 = $Inicio.ToString("yyyy-MM-dd HH:mm:ss")
-    Ferramenta           = "WAP-ReparoAvancado"
+    Ferramenta           = "WAP-ReparoSAP"
     Departamento         = $Department
     Status               = $Status
     DuracaoSegundos      = $Duracao
     Erro                 = $Erro
-    TempoEconomizadoMins = 40
+    TempoEconomizadoMins = 5
 }
 
-# Arquivo CSV
-
-$NomeArquivo = "ReparoAvancado_{0}_{1}.csv" -f $env:COMPUTERNAME, (Get-Date -Format "yyyyMMdd_HHmmss")
+# Nome do CSV
+$NomeArquivo = "ListaSAP_{0}_{1}.csv" -f $env:COMPUTERNAME, (Get-Date -Format "yyyyMMdd_HHmmss")
 $ArquivoJson = Join-Path -Path $JsonPath -ChildPath $NomeArquivo
 $ArquivoJsonBackup = Join-Path -Path $JsonPathBackup -ChildPath $NomeArquivo
 
