@@ -20,9 +20,11 @@
 
 A **Workplace Automation Platform (WAP)** é uma iniciativa de automação focada na melhoria de processos técnicos e repetitivos de suporte, construída em **PowerShell** e pensada para tecnologias de distribuição corporativa.
 
-As ferramentas foram originalmente desenvolvidas como parte de uma plataforma corporativa de automação para Workplace e, posteriormente, adaptadas para funcionar de forma independente do ambiente corporativo original.
+As ferramentas foram desenvolvidas como parte da plataforma de automação do time de Workplace, distribuída em modelo **self-service** pelo SCCM. Este repositório é a versão **pública** do projeto: os scripts (`scripts/`) não têm caminhos de rede, servidores, IPs, DNS ou destinos de telemetria preconfigurados, e a documentação das ferramentas fica em `wap/`. Todo valor dependente do ambiente aparece como `coloque_seu_path_aqui` e deve ser substituído antes do uso.
 
-Hoje o repositório reúne **rotinas de reparo, diagnóstico e instaladores automatizados**, com distribuição centralizada via **Microsoft Configuration Manager (SCCM)**, geração estruturada de logs e coleta de telemetria de execução.
+O WAP reúne **11 ferramentas**: 5 rotinas de reparo e 6 instaladores (o ambiente Docker é composto por dois pacotes independentes, WSL e Docker). A distribuição é centralizada via **Microsoft Configuration Manager (SCCM)**, com logs padronizados e telemetria CSV por execução.
+
+> O WAP não substitui o suporte especializado: quando uma automação não consegue confirmar o resultado ou encontra uma condição fora do escopo, o caso continua exigindo avaliação técnica.
 
 <a id="objetivos"></a>
 ## 🎯 Objetivos
@@ -44,140 +46,81 @@ A plataforma foi criada para solucionar cenários recorrentes de suporte que tra
 <a id="ferramentas"></a>
 ## 🛠️ Ferramentas disponíveis
 
-As ferramentas seguem o padrão visual da plataforma:
-🔵 **Reparo simples** · 🟠 **Reparo avançado** · 🟢 **Instaladores**
+Guia técnico de cada ferramenta no `README.md` da sua pasta em [`scripts/`](scripts/README.md) e, em versão institucional, em [`wap/`](wap/README.md). A economia de tempo indicada é uma **estimativa fixa de referência para ROI**, não uma medição do tempo real poupado.
 
----
+🔵 **Reparos** · 🟢 **Instaladores**
 
-### 🔵 1. Teams Repair
-**Status:** ✅ Funcional
+### 🔵 Reparos
 
-Automatiza procedimentos comuns de troubleshooting do Microsoft Teams.
-- Encerramento de processos do Teams e do Microsoft Edge WebView
-- Limpeza do cache do Teams
-- Múltiplas tentativas de limpeza com lógica de retry
-- Reinicialização do aplicativo Teams
-- Identificação do usuário e da estação de trabalho
-- Consulta opcional ao departamento do usuário no Active Directory
-- Geração de logs e categorização de erros
+| Ferramenta | Contexto | O que faz | Economia est. | Documentação |
+|---|---|---|---|---|
+| Reparo do Teams | Usuário | Encerra processos do Teams e do WebView2, remove o cache do novo Teams (com retry) e solicita a reabertura pelos protocolos `msteams:`, `ms-teams:` e `teams:` | 5 min | [Uso](scripts/Executaveis/Reparo%20Teams/README.md) · [Visão geral](wap/Reparo-Teams.md) |
+| Reparo Rápido do Windows | Máquina | Limpa DNS, solicita reset de Winsock/TCP-IP, limpa TEMP, limpa o cache do Teams e reinicia o Explorer. O reset de rede pode exigir reinicialização | 20 min | [Uso](scripts/Executaveis/Reparo%20Rapido/README.md) · [Visão geral](wap/Reparo-Rapido.md) |
+| Reparo Avançado do Windows | Máquina | Executa SFC, DISM, CHKDSK (verificação online) e otimização do C:, e reinicia os serviços do Windows Update/BITS limpando `SoftwareDistribution` | 40 min | [Uso](scripts/Executaveis/Reparo%20avancado/README.md) · [Visão geral](wap/Reparo-Avancado.md) |
+| Reparo SAP | Usuário | Faz backup (`.bkp`) e restaura `SAPUILandscape.xml` e `SAPUILandscapeGlobal.xml` a partir da origem configurada | 5 min | [Uso](scripts/Executaveis/Reparo%20SAP/README.md) · [Visão geral](wap/Reparo-SAP.md) |
+| Reparo de Impressora | Máquina + usuário | **Etapa 1 (admin/SYSTEM):** para o Spooler, limpa a fila, reinicia o serviço e aplica `RpcAuthnLevelPrivacyEnabled`. **Etapa 2 (usuário):** reconecta a fila de rede e confirma a impressora padrão | 10 min | [Uso](scripts/Executaveis/Reparo%20impressoras/README.md) · [Visão geral](wap/Reparo-Impressora.md) |
 
----
+### 🟢 Instaladores
 
-### 🔵 2. Windows Quick Repair
-**Status:** ✅ Funcional
+| Ferramenta | Contexto | O que faz | Economia est. | Documentação |
+|---|---|---|---|---|
+| Runtime WSL | SYSTEM | Habilita os recursos `Microsoft-Windows-Subsystem-Linux` e `VirtualMachinePlatform` e instala o runtime WSL via MSI. Retorna `3010` quando exige reinicialização. Não importa distro nem instala Docker | 30 min | [Uso](scripts/Instaladores/WSL/README.md) · [Visão geral](wap/Instalador-WSL.md) |
+| Docker CE em WSL | Usuário | Importa uma distro Ubuntu a partir de imagem corporativa com Docker CE, Compose e systemd já incluídos, valida o daemon e instala o *first-run*. **Não usa Docker Desktop.** Independente do instalador WSL, que é pré-requisito | 20 min | [Uso](scripts/Instaladores/Docker/README.md) · [Visão geral](wap/Instalador-Docker.md) |
+| DBeaver | Máquina | Instala o DBeaver empacotado e aplica o workspace corporativo (drivers e configurações). **Atenção:** é uma reinstalação e remove o `DBeaverData` anterior do perfil-alvo | 25 min | [Uso](scripts/Instaladores/Dbeaver/README.md) · [Visão geral](wap/Instalador-DBeaver.md) |
+| Git Bash | Usuário | Instala o Git for Windows via WinGet, com fallback para o instalador oficial, e valida `git --version` | 5 min | [Uso](scripts/Instaladores/Gitbash/README.md) · [Visão geral](wap/Instalador-GitBash.md) |
+| Claude CLI | Usuário | Instala o Claude Code CLI (WinGet em tarefa agendada, WinGet no processo ou instalador oficial) e valida `claude --version` | 10 min | [Uso](scripts/Instaladores/ClaudeCLI/README.md) · [Visão geral](wap/Instalador-Claude-CLI.md) |
+| Amazon Redshift ODBC | Máquina + usuário | Instala o driver ODBC (MSI) e, em etapa de usuário, importa o DSN e a lista de fontes de dados a partir de arquivos `.reg` fornecidos pelo seu ambiente | n/d | [Uso](scripts/Instaladores/ODBC/README.md) |
 
-Executa um conjunto de procedimentos rápidos de troubleshooting e manutenção do Windows, utilizados frequentemente no suporte diário de Workplace.
-- Limpeza do cache DNS
-- Reset do Winsock e do TCP/IP
-- Limpeza das pastas TEMP do usuário e do Windows
-- Limpeza do cache do Teams
-- Reinicialização do Windows Explorer
-- Coleta de informações do sistema
-- Geração de logs e categorização de erros
+### Limites conhecidos
 
----
-
-### 🟠 3. Windows Advanced Repair
-**Status:** ✅ Funcional
-
-Disponibiliza uma rotina mais completa de troubleshooting e reparo do Windows para problemas recorrentes do sistema operacional.
-- System File Checker (SFC)
-- Restauração da integridade do sistema com DISM
-- Verificação de disco com CHKDSK e otimização
-- Reset dos serviços e limpeza do cache do Windows Update
-- Diagnóstico do sistema e coleta de informações de rede
-- Monitoramento de espaço em disco e tempo de atividade
-- Geração de logs e categorização de erros
-
----
-
-### 🔵 4. SAP List Fix
-**Status:** ✅ Funcional
-
-Corrige e padroniza a lista de conexões do SAP GUI, eliminando a configuração manual por usuário.
-- Restauração do arquivo de configuração oficial
-- Padronização das entradas de ambiente
-- Geração de log de execução
-
----
-
-### 🔵 5. Printer Repair
-**Status:** 🟢 Produção
-
-Correção automatizada de falhas recorrentes de impressão.
-- Tratamento do erro `0x00000709` (impressora padrão)
-- Reset do spooler de impressão e limpeza da fila
-- Revalidação das conexões com impressoras de rede
-- Geração de logs e categorização de erros
-
----
-
-### 🟢 6. Docker Install & Troubleshooting
-**Status:** 🟢 Produção
-
-Instalação, provisionamento e recuperação completa do ambiente Docker + WSL.
-- Instalação silenciosa do Docker Desktop
-- Provisionamento e validação do WSL e das distros
-- Ajustes de proxy e certificados corporativos
-- Verificação e reinício dos serviços do Docker
-- Rotina de diagnóstico para falhas de ambiente
-- Geração de logs e categorização de erros
-
----
-
-### 🟢 7. DBeaver Install & Config
-**Status:** ✅ Funcional
-
-Instalação do DBeaver com configuração automatizada do ambiente de trabalho.
-- Instalação silenciosa da aplicação
-- Injeção de workspace padronizado
-- Configuração de ODBC via registro
-- Conexões corporativas no padrão de autenticação IDP/SSO
-
----
-
-### 🟢 8. Git Bash Install
-**Status:** ✅ Funcional
-
-Instalação silenciosa do Git Bash com parâmetros padronizados do ambiente corporativo.
-
----
-
-### 🟢 9. Claude CLI Install
-**Status:** ✅ Funcional
-
-Instalação automatizada da CLI, com tratamento de proxy, certificados e dependências do ambiente corporativo.
+- Os reparos fazem o melhor esforço para itens bloqueados e nem sempre confirmam o resultado de cada comando externo.
+- O Reparo do Teams não valida que a interface do Teams realmente abriu.
+- O script de impressora administrativo não instala drivers; a etapa de usuário deve ser implantada separadamente no contexto do usuário.
+- Em Git Bash e Claude CLI, a instalação depende de internet, WinGet e, no caso do Claude CLI, de uma sessão de usuário ativa.
 
 <a id="estrutura"></a>
 ## 📂 Estrutura do repositório
 
 ```
 Workplace-Automation-Platform/
-├── scripts/
-│   ├── Teams-Repair.ps1
-│   ├── Windows-Quick-Repair.ps1
-│   ├── Windows-Advanced-Repair.ps1
-│   ├── SAP-List-Fix.ps1
-│   ├── Printer-Repair.ps1
-│   ├── Docker-Install.ps1
-│   ├── DBeaver-Install.ps1
-│   ├── GitBash-Install.ps1
-│   └── ClaudeCLI-Install.ps1
+├── scripts/                          # Scripts por ferramenta, cada pasta com seu README.md
+│   ├── README.md                     # Índice das ferramentas
+│   ├── Executaveis/                  # Reparos
+│   │   ├── Reparo avancado/
+│   │   ├── Reparo impressoras/
+│   │   ├── Reparo Rapido/
+│   │   ├── Reparo SAP/
+│   │   └── Reparo Teams/
+│   └── Instaladores/
+│       ├── ClaudeCLI/
+│       ├── Dbeaver/
+│       ├── Docker/
+│       ├── Gitbash/
+│       ├── ODBC/
+│       └── WSL/
+├── wap/                              # Documentação institucional das ferramentas
+│   ├── README.md                     # Índice
+│   ├── Apresentacao-WAP.md
+│   ├── Padrao-Oficial-WAP.md         # Padrão para novos scripts
+│   ├── PowerBI.md                    # Telemetria CSV e métricas
+│   ├── Reparo-*.md
+│   └── Instalador-*.md
 ├── assets/
-│   ├── icons/
-│   └── screenshots/
 ├── LICENSE
 └── README.md
 ```
+
+> Este repositório não contém dados do ambiente corporativo. Antes de usar, substitua os valores `coloque_seu_path_aqui` (e `coloque_seu_*_aqui`) indicados no README de cada ferramenta.
 
 <a id="requisitos"></a>
 ## 💻 Requisitos
 
 - Windows 10 ou superior
 - PowerShell 5.1 ou superior
-- Execução com privilégios administrativos (necessário para reparos de sistema e instaladores)
-- Módulo Active Directory (opcional, apenas para consulta de departamento do usuário)
-- WSL 2 habilitado (apenas para as automações de Docker)
+- Privilégios administrativos para reparos de sistema (Rápido, Avançado, Impressora etapa 1) e instaladores de máquina; Teams, SAP e instaladores por usuário rodam no contexto do usuário
+- Módulo Active Directory (opcional: usado apenas na coluna `Departamento` da telemetria; sem ele o valor fica `Unknown` e a execução continua)
+- Runtime WSL instalado (apenas para o Docker)
+- Internet e WinGet (Git Bash e Claude CLI)
 
 <a id="como-usar"></a>
 ## ▶️ Como usar
@@ -188,50 +131,62 @@ git clone https://github.com/ViCodax/Workplace-Automation-Platform.git
 cd Workplace-Automation-Platform/scripts
 ```
 
-2. Execute o script desejado em um terminal PowerShell com privilégios administrativos:
+2. Abra o `README.md` da ferramenta desejada (ex.: `Executaveis/Reparo Teams/README.md`), substitua os valores `coloque_seu_path_aqui` e execute no contexto indicado:
 ```powershell
-.\Teams-Repair.ps1
+.\WAP-ReparoTeams.ps1
+.\WAP-ReparoSAP.ps1 -SapSourcePath 'coloque_seu_path_aqui'
+.\WAP-ReparoImpressora-Usuario.ps1 -PrinterServer 'coloque_seu_servidor_aqui' -PrinterShare 'NOME_DA_IMPRESSORA'
 ```
 
-3. Acompanhe os logs de execução gerados automaticamente para validar o resultado da automação.
+3. Acompanhe o log em `C:\Temp\WAP\Logs` para validar o resultado.
 
-> ⚠️ Recomenda-se testar os scripts em ambiente controlado antes de distribuir em produção.
+> ⚠️ Teste os scripts em uma máquina de homologação antes de qualquer deploy em massa.
 
 <a id="sccm"></a>
 ## 📦 Distribuição via SCCM
 
-Os scripts são empacotados e distribuídos de forma centralizada via **Microsoft Configuration Manager (SCCM)**, disponibilizados em **self-service** no Software Center, possibilitando:
+Os scripts são empacotados por responsabilidade e distribuídos via **Microsoft Configuration Manager (SCCM)** em **self-service** no Software Center, possibilitando:
 
 - Execução silenciosa em massa
 - Coleta de logs padronizados para auditoria
-- Agendamento e distribuição segmentada por coleção de dispositivos
+- Distribuição segmentada por coleção de dispositivos
 - Autoatendimento do usuário final, sem abertura de chamado
+
+**Contexto e códigos de retorno**
+- Separação entre operações de máquina (SYSTEM) e de usuário (perfil), declarada por ferramenta
+- `0` = sucesso, `1` = falha, `3010` = concluído com reinicialização requerida (usado pelo instalador WSL)
 
 **Boas práticas de empacotamento**
 - Uma pasta de source por ferramenta (evita inflar o tamanho do pacote)
 - Execução com `-ExecutionPolicy Bypass`
 - Método de detecção baseado em arquivo de log ou chave de registro
+- Homologar o pacote e o comportamento pelo SCCM antes de publicar
+
+Novos scripts seguem o [Padrão Oficial WAP](wap/Padrao-Oficial-WAP.md).
 
 <a id="telemetria"></a>
 ## 📊 Telemetria
 
-Todos os scripts registram dados de execução em formato estruturado (**CSV**), permitindo análise operacional:
+Os scripts PowerShell exportam uma linha CSV por execução, com fallback local quando a rede não está disponível (padrão: `C:\Temp\WAP\JsonBackup`, nome histórico). Campos comuns:
 
-- Nome e versão da ferramenta
-- Usuário, hostname e departamento
-- Data/hora de início e fim, com duração total
-- Resultado final (sucesso/erro) e categoria do erro
+- `Data`, `Ferramenta`, `Departamento`, `Status`, `DuracaoSegundos`, `Erro` e `TempoEconomizadoMins`
+- Alguns scripts exportam também `AcessoRede` ou `UptimeHoras`
 
-Esses dados alimentam um **dashboard em Power BI**, usado para acompanhar adoção, volume de execuções, taxa de sucesso e economia de atendimentos manuais.
+Os esquemas ainda **não são idênticos** entre todas as ferramentas; o [Padrão Oficial](wap/Padrao-Oficial-WAP.md) define o esquema alvo para novos scripts (incluindo `CategoriaErro` e `TentativasRetry`). O instalador Docker via CMD grava apenas log, sem CSV.
+
+Os CSVs são consumidos no **Power BI** (volume, taxa de sucesso, duração e falhas). `TempoEconomizadoMins` é uma estimativa fixa de ROI, não uma medição. Detalhes em [`wap/PowerBI.md`](wap/PowerBI.md).
 
 <a id="roadmap"></a>
 ## 🗺️ Roadmap
 
-- [ ] Abertura automática de chamado no TOPdesk via Webhook/API a cada execução
-- [ ] Novas automações de suporte (VPN, perfil de usuário)
+Prioridades: confiabilidade, clareza de ownership, consistência entre implementação e documentação, e validação da distribuição via SCCM. Itens abaixo são **ideias futuras**, sem escopo, responsáveis ou homologação definidos; não são entregas.
+
+- [ ] Unificar o esquema de telemetria entre as ferramentas, conforme o Padrão Oficial
 - [ ] Evolução do painel de telemetria em Power BI
+- [ ] Abertura automática de chamado no TOPdesk via Webhook/API
+- [ ] Novas automações de suporte (VPN, perfil de usuário)
 - [ ] Versão com interface gráfica (GUI) para usuários finais
-- [ ] Publicação de pacotes prontos para Intune
+- [ ] Pacotes prontos para Intune
 
 <a id="contribuicao"></a>
 ## 🤝 Contribuição
